@@ -1,0 +1,159 @@
+"use client";
+
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { createDailyTarget, createQuickApplication } from "@/app/actions/application";
+import Link from "next/link";
+import LogoutButton from "@/components/LogoutButton";
+
+export default function QuickAdditionPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [targetCount, setTargetCount] = useState(1);
+
+  async function handleDailyTarget(formData: FormData) {
+    setIsLoading(true);
+    const date = formData.get("date") as string;
+    const count = parseInt(formData.get("count") as string);
+    
+    await createDailyTarget(date, count);
+    setIsLoading(false);
+  }
+
+  async function handleQuickAdd(formData: FormData) {
+    setIsLoading(true);
+    await createQuickApplication(formData);
+    setIsLoading(false);
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Quick Addition</h1>
+        <div className="flex space-x-2">
+          <Link href="/dashboard">
+            <Button variant="outline">← Dashboard</Button>
+          </Link>
+          <Link href="/application">
+            <Button variant="outline">Full Form</Button>
+          </Link>
+          <LogoutButton />
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Daily Target */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Set Daily Target</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form action={handleDailyTarget} className="space-y-4">
+              <div>
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  name="date"
+                  type="date"
+                  required
+                  defaultValue={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <Label htmlFor="count">Applications Count</Label>
+                <Input
+                  id="count"
+                  name="count"
+                  type="number"
+                  min="1"
+                  max="50"
+                  required
+                  defaultValue="5"
+                />
+              </div>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                Create Placeholders
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Quick Single Add */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Single Add</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form action={handleQuickAdd} className="space-y-4">
+              <div>
+                <Label htmlFor="quickCompany">Company Name</Label>
+                <Input
+                  id="quickCompany"
+                  name="companyName"
+                  placeholder="e.g., Google"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="quickPosition">Position</Label>
+                <Input
+                  id="quickPosition"
+                  name="position"
+                  placeholder="e.g., Software Engineer"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="quickCategory">Category</Label>
+                <Select name="companyType" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MNC">MNC</SelectItem>
+                    <SelectItem value="YC_STARTUP">YC Startup</SelectItem>
+                    <SelectItem value="INDIAN_UNICORN">Indian Unicorn</SelectItem>
+                    <SelectItem value="WELLFOUND_STARTUP">Wellfound Startup</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                Quick Add
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Today's Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3, 5, 10].map((count) => (
+              <Button
+                key={count}
+                variant="outline"
+                onClick={() => {
+                  const formData = new FormData();
+                  formData.append('date', new Date().toISOString().split('T')[0]);
+                  formData.append('count', count.toString());
+                  handleDailyTarget(formData);
+                }}
+                disabled={isLoading}
+              >
+                +{count} Applications
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

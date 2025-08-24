@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { applications, dailyApplications } from "@/db/schema";
+import { Application, applications, dailyApplications } from "@/db/schema";
 import { eq, desc, sql, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -126,4 +126,49 @@ export async function getApplicationsWithStats() {
     statusStats,
     companyTypeStats,
   };
+}
+export async function getApplicationsByCategory(category: string) {
+  if (category === 'all') {
+    return await db.select().from(applications).orderBy(desc(applications.appliedDate));
+  }
+  
+  return await db
+    .select()
+    .from(applications)
+    .where(eq(applications.companyType, category as any))
+    .orderBy(desc(applications.appliedDate));
+}
+
+export async function updateApplication(id: number, data: Partial<Application>) {
+  try {
+    await db
+      .update(applications)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(applications.id, id));
+    
+    revalidatePath('/category-wise');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Failed to update application" };
+  }
+}
+
+export async function createQuickApplication(formData: FormData) {
+  const companyName = formData.get("companyName") as string;
+  const position = formData.get("position") as string;
+  const companyType = formData.get("companyType") as any;
+
+  try {
+    await db.insert(applications).values({
+      companyName,
+      position,
+      companyType,
+      status: "APPLIED",
+    });
+
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Failed to create application" };
+  }
 }
