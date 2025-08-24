@@ -1,7 +1,14 @@
 "use server";
 
 import { db } from "@/db";
-import { Application, applications, dailyApplications } from "@/db/schema";
+import { 
+  Application, 
+  applications as applicationsTable, 
+  dailyApplications,
+  NewApplication,
+  companyTypeEnum,
+  applicationStatusEnum 
+} from "@/db/schema";
 import { eq, desc, sql, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -9,13 +16,13 @@ import { redirect } from "next/navigation";
 export async function createApplication(formData: FormData) {
   const companyName = formData.get("companyName") as string;
   const position = formData.get("position") as string;
-  const companyType = formData.get("companyType") as any;
+  const companyType = formData.get("companyType") as typeof companyTypeEnum.enumValues[number];
   const jobDescription = formData.get("jobDescription") as string;
   const applicationUrl = formData.get("applicationUrl") as string;
   const notes = formData.get("notes") as string;
 
   try {
-    await db.insert(applications).values({
+    await db.insert(applicationsTable).values({
       companyName,
       position,
       companyType,
@@ -25,7 +32,12 @@ export async function createApplication(formData: FormData) {
       status: "APPLIED",
     });
 
+    // Revalidate all affected paths
     revalidatePath("/dashboard");
+    revalidatePath("/category-wise/all");
+    revalidatePath(`/category-wise/${companyType}`);
+    revalidatePath("/", "layout"); // Force revalidate entire app
+    
     return { success: true };
   } catch (error) {
     return { success: false, error: "Failed to create application" };
@@ -40,16 +52,20 @@ export async function updateApplicationStatus(
 ) {
   try {
     await db
-      .update(applications)
+      .update(applicationsTable)
       .set({
-        status: status as any,
+        status: status as typeof applicationStatusEnum.enumValues[number],
         currentRound,
         finalVerdict,
         updatedAt: new Date(),
       })
-      .where(eq(applications.id, applicationId));
+      .where(eq(applicationsTable.id, applicationId));
 
+    // Revalidate all affected paths
     revalidatePath("/dashboard");
+    revalidatePath("/category-wise/all");
+    revalidatePath("/category-wise/[category]", "page"); // Dynamic route revalidation
+    
     return { success: true };
   } catch (error) {
     return { success: false, error: "Failed to update application" };
@@ -68,18 +84,23 @@ export async function createDailyTarget(date: string, count: number) {
     });
 
     // Create placeholder applications for the day
-    const placeholders = Array.from({ length: count }, (_, i) => ({
+    const placeholders: NewApplication[] = Array.from({ length: count }, (_, i) => ({
       companyName: `Placeholder ${i + 1}`,
       position: "To be filled",
-      companyType: "OTHER" as any,
+      companyType: "OTHER",
       appliedDate: targetDate,
-      status: "APPLIED" as any,
+      status: "APPLIED",
       notes: "Created from daily target - please fill details",
     }));
 
-    await db.insert(applications).values(placeholders);
+    await db.insert(applicationsTable).values(placeholders);
 
+    // Revalidate all affected paths
     revalidatePath("/dashboard");
+    revalidatePath("/category-wise/all");
+    revalidatePath("/category-wise/OTHER");
+    revalidatePath("/", "layout");
+    
     return { success: true };
   } catch (error) {
     return { success: false, error: "Failed to create daily target" };
@@ -87,66 +108,92 @@ export async function createDailyTarget(date: string, count: number) {
 }
 
 export async function getApplicationsWithStats() {
-  const allApplications = await db
-    .select()
-    .from(applications)
-    .orderBy(desc(applications.appliedDate));
+  try {
+    const allApplications: Application[] = await db
+      .select()
+      .from(applicationsTable)
+      .orderBy(desc(applicationsTable.appliedDate));
 
-  // Get daily application counts for chart
-  const dailyStats = await db
-    .select({
-      date: sql<string>`DATE(${applications.appliedDate})`,
-      count: sql<number>`COUNT(*)`,
-    })
-    .from(applications)
-    .groupBy(sql`DATE(${applications.appliedDate})`)
-    .orderBy(sql`DATE(${applications.appliedDate})`);
+    // Get daily application counts for chart
+    const dailyStats = await db
+      .select({
+        date: sql<string>`DATE(${applicationsTable.appliedDate})`,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(applicationsTable)
+      .groupBy(sql`DATE(${applicationsTable.appliedDate})`)
+      .orderBy(sql`DATE(${applicationsTable.appliedDate})`);
 
-  // Get status distribution
-  const statusStats = await db
-    .select({
-      status: applications.status,
-      count: sql<number>`COUNT(*)`,
-    })
-    .from(applications)
-    .groupBy(applications.status);
+    // Get status distribution
+    const statusStats = await db
+      .select({
+        status: applicationsTable.status,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(applicationsTable)
+      .groupBy(applicationsTable.status);
 
-  // Get company type distribution
-  const companyTypeStats = await db
-    .select({
-      companyType: applications.companyType,
-      count: sql<number>`COUNT(*)`,
-    })
-    .from(applications)
-    .groupBy(applications.companyType);
+    // Get company type distribution
+    const companyTypeStats = await db
+      .select({
+        companyType: applicationsTable.companyType,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(applicationsTable)
+      .groupBy(applicationsTable.companyType);
 
-  return {
-    applications: allApplications,
-    dailyStats,
-    statusStats,
-    companyTypeStats,
-  };
-}
-export async function getApplicationsByCategory(category: string) {
-  if (category === 'all') {
-    return await db.select().from(applications).orderBy(desc(applications.appliedDate));
+    console.log("Applications fetched:", allApplications.length); // Debug log
+    console.log("Daily stats:", dailyStats.length); // Debug log
+
+    return {
+      applications: allApplications,
+      dailyStats,
+      statusStats,
+      companyTypeStats,
+    };
+  } catch (error) {
+    console.error("Error fetching applications with stats:", error);
+    return {
+      applications: [] as Application[],
+      dailyStats: [] as { date: string; count: number }[],
+      statusStats: [] as { status: string; count: number }[],
+      companyTypeStats: [] as { companyType: string; count: number }[],
+    };
   }
-  
-  return await db
-    .select()
-    .from(applications)
-    .where(eq(applications.companyType, category as any))
-    .orderBy(desc(applications.appliedDate));
+}
+
+export async function getApplicationsByCategory(category: string): Promise<Application[]> {
+  try {
+    if (category === 'all') {
+      return await db.select().from(applicationsTable).orderBy(desc(applicationsTable.appliedDate));
+    }
+    
+    return await db
+      .select()
+      .from(applicationsTable)
+      .where(eq(applicationsTable.companyType, category as typeof companyTypeEnum.enumValues[number]))
+      .orderBy(desc(applicationsTable.appliedDate));
+  } catch (error) {
+    console.error("Error fetching applications by category:", error);
+    return [];
+  }
 }
 
 export async function updateApplication(id: number, data: Partial<Application>) {
   try {
     await db
-      .update(applications)
+      .update(applicationsTable)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(applications.id, id));
+      .where(eq(applicationsTable.id, id));
     
-    revalidatePath('/category-wise');
+    // Revalidate all affected paths
+    revalidatePath("/dashboard");
+    revalidatePath("/category-wise/all");
+    if (data.companyType) {
+      revalidatePath(`/category-wise/${data.companyType}`);
+    }
+    revalidatePath("/category-wise/[category]", "page");
+    
     return { success: true };
   } catch (error) {
     return { success: false, error: "Failed to update application" };
@@ -156,19 +203,65 @@ export async function updateApplication(id: number, data: Partial<Application>) 
 export async function createQuickApplication(formData: FormData) {
   const companyName = formData.get("companyName") as string;
   const position = formData.get("position") as string;
-  const companyType = formData.get("companyType") as any;
+  const companyType = formData.get("companyType") as typeof companyTypeEnum.enumValues[number];
 
   try {
-    await db.insert(applications).values({
+    await db.insert(applicationsTable).values({
       companyName,
       position,
       companyType,
       status: "APPLIED",
     });
 
-    revalidatePath('/dashboard');
+    // Revalidate all affected paths
+    revalidatePath("/dashboard");
+    revalidatePath("/category-wise/all");
+    revalidatePath(`/category-wise/${companyType}`);
+    revalidatePath("/", "layout");
+    
     return { success: true };
   } catch (error) {
     return { success: false, error: "Failed to create application" };
   }
+}
+
+// Additional helper function to force refresh dashboard
+export async function refreshDashboard() {
+  try {
+    revalidatePath("/dashboard");
+    revalidatePath("/category-wise/all");
+    revalidatePath("/category-wise/[category]", "page");
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Failed to refresh dashboard" };
+  }
+}
+
+// Function to get fresh stats without cache
+export async function getFreshApplicationStats() {
+  const allApplications: Application[] = await db
+    .select()
+    .from(applicationsTable)
+    .orderBy(desc(applicationsTable.appliedDate));
+
+  const totalApplications = allApplications.length;
+  const todayApplications = allApplications.filter(
+    (app: Application) => new Date(app.appliedDate).toDateString() === new Date().toDateString()
+  ).length;
+
+  const proceededCount = allApplications.filter((app: Application) => app.status === "PROCEEDED").length;
+  const successRate = totalApplications ? Math.round((proceededCount / totalApplications) * 100) : 0;
+  
+  const pendingCount = allApplications.filter((app: Application) => app.status === "PENDING").length;
+  const rejectedCount = allApplications.filter((app: Application) => app.status === "REJECTED").length;
+
+  return {
+    totalApplications,
+    todayApplications,
+    successRate,
+    pendingCount,
+    rejectedCount,
+    proceededCount
+  };
 }

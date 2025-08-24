@@ -44,47 +44,11 @@ export default function QuickAdditionPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Daily Target */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Set Daily Target</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={handleDailyTarget} className="space-y-4">
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  name="date"
-                  type="date"
-                  required
-                  defaultValue={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="count">Applications Count</Label>
-                <Input
-                  id="count"
-                  name="count"
-                  type="number"
-                  min="1"
-                  max="50"
-                  required
-                  defaultValue="5"
-                />
-              </div>
-              <Button type="submit" disabled={isLoading} className="w-full">
-                Create Placeholders
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
+      <div className="grid md:grid-cols-1 gap-8">
         {/* Quick Single Add */}
         <Card>
           <CardHeader>
-            <CardTitle>Quick Single Add</CardTitle>
+            <CardTitle>Quick Add</CardTitle>
           </CardHeader>
           <CardContent>
             <form action={handleQuickAdd} className="space-y-4">
@@ -128,32 +92,6 @@ export default function QuickAdditionPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Today's Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 5, 10].map((count) => (
-              <Button
-                key={count}
-                variant="outline"
-                onClick={() => {
-                  const formData = new FormData();
-                  formData.append('date', new Date().toISOString().split('T')[0]);
-                  formData.append('count', count.toString());
-                  handleDailyTarget(formData);
-                }}
-                disabled={isLoading}
-              >
-                +{count} Applications
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

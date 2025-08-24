@@ -19,12 +19,14 @@ const COLORS = [
 ];
 
 export default function CategoryDistribution({ data }: CategoryDistributionProps) {
-  // Transform data for better display
+  // Transform data for better display and ensure count is a number
   const chartData = data.map(item => ({
     name: item.companyType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    value: item.count,
+    value: Number(item.count), // Ensure it's a number, not string
     companyType: item.companyType
   }));
+
+  const totalApplications = chartData.reduce((sum, item) => sum + item.value, 0);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -36,7 +38,7 @@ export default function CategoryDistribution({ data }: CategoryDistributionProps
             Applications: <span className="font-bold">{data.value}</span>
           </p>
           <p className="text-gray-500 text-sm">
-            {((data.value / chartData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%
+            {((data.value / totalApplications) * 100).toFixed(1)}%
           </p>
         </div>
       );
@@ -44,7 +46,7 @@ export default function CategoryDistribution({ data }: CategoryDistributionProps
     return null;
   };
 
-  if (chartData.length === 0) {
+  if (chartData.length === 0 || totalApplications === 0) {
     return (
       <Card>
         <CardHeader>
@@ -74,10 +76,11 @@ export default function CategoryDistribution({ data }: CategoryDistributionProps
                 cy="50%"
                 labelLine={false}
                 outerRadius={80}
+                innerRadius={0} // Make it a full pie, not donut
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => 
-                    percent && percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''
+                label={({ percent }) => 
+                  percent && percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''
                 }
               >
                 {chartData.map((entry, index) => (
@@ -104,10 +107,29 @@ export default function CategoryDistribution({ data }: CategoryDistributionProps
           </div>
           <div>
             <span className="text-gray-500">Total Applications:</span>
-            <span className="font-semibold ml-2">
-              {chartData.reduce((sum, item) => sum + item.value, 0)}
-            </span>
+            <span className="font-semibold ml-2">{totalApplications}</span>
           </div>
+        </div>
+
+        {/* Breakdown by category */}
+        <div className="mt-4 space-y-2">
+          {chartData.map((item, index) => (
+            <div key={item.companyType} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span>{item.name}</span>
+              </div>
+              <div className="flex gap-4">
+                <span className="font-semibold">{item.value}</span>
+                <span className="text-gray-500">
+                  {((item.value / totalApplications) * 100).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
