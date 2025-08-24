@@ -10,23 +10,24 @@ export default async function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Job Application Dashboard</h1>
-        <div className="space-x-2">
-          <Link 
-            href="/application" 
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-          >
-            Add Application
-          </Link>
-          <Link 
-            href="/quick-addition" 
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-          >
-            Quick Add
-          </Link>
-        </div>
+    <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 mb-8">
+      <h1 className="text-3xl font-bold">Job Application Dashboard</h1>
+      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <Link 
+          href="/application" 
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-center whitespace-nowrap"
+        >
+          Add Application
+        </Link>
+        <Link 
+          href="/quick-addition" 
+          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-center whitespace-nowrap"
+        >
+          Quick Add
+        </Link>
       </div>
+    </div>
+
 
       {/* Stats Cards */}
       <StatsCards applications={applications} />
