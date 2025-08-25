@@ -17,7 +17,7 @@ export default function ApplicationChart({ data }: ApplicationChartProps) {
   const chartData = data
     .map(item => ({
       date: item.date,
-      count: item.count,
+      count: Number(item.count), // Ensure it's a number
       formattedDate: new Date(item.date).toLocaleDateString('en-US', { 
         month: 'short', 
         day: 'numeric' 
@@ -56,9 +56,24 @@ export default function ApplicationChart({ data }: ApplicationChartProps) {
     );
   }
 
+  // Calculate proper stats
   const totalApplications = chartData.reduce((sum, item) => sum + item.count, 0);
-  const averagePerDay = (totalApplications / chartData.length).toFixed(1);
-  const maxDay = chartData.reduce((max, item) => item.count > max.count ? item : max);
+  
+  // Calculate average based on actual days with applications (not all days in range)
+  const daysWithApplications = chartData.filter(item => item.count > 0).length;
+  const averagePerActiveDay = daysWithApplications > 0 
+    ? (totalApplications / daysWithApplications).toFixed(1) 
+    : "0";
+  
+  // Find the best day (highest count)
+  const bestDay = chartData.reduce((max, item) => 
+    item.count > max.count ? item : max, chartData[0]
+  );
+  
+  const bestDayFormatted = new Date(bestDay.date).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric' 
+  });
 
   return (
     <Card>
@@ -104,14 +119,33 @@ export default function ApplicationChart({ data }: ApplicationChartProps) {
           <div className="text-center">
             <div className="text-gray-500">Total</div>
             <div className="font-bold text-lg">{totalApplications}</div>
+            <div className="text-xs text-gray-400">applications</div>
           </div>
           <div className="text-center">
             <div className="text-gray-500">Daily Avg</div>
-            <div className="font-bold text-lg">{averagePerDay}</div>
+            <div className="font-bold text-lg">{averagePerActiveDay}</div>
+            <div className="text-xs text-gray-400">per active day</div>
           </div>
           <div className="text-center">
             <div className="text-gray-500">Best Day</div>
-            <div className="font-bold text-lg">{maxDay.count}</div>
+            <div className="font-bold text-lg">{bestDay.count}</div>
+            <div className="text-xs text-gray-400">{bestDayFormatted}</div>
+          </div>
+        </div>
+
+        {/* Additional insights */}
+        <div className="mt-4 grid grid-cols-2 gap-4 text-xs text-gray-500 border-t pt-3">
+          <div>
+            <span>Active Days: </span>
+            <span className="font-semibold">{daysWithApplications}</span>
+            <span> out of {chartData.length}</span>
+          </div>
+          <div>
+            <span>Last 7 Days: </span>
+            <span className="font-semibold">
+              {chartData.slice(-7).reduce((sum, item) => sum + item.count, 0)}
+            </span>
+            <span> applications</span>
           </div>
         </div>
       </CardContent>
