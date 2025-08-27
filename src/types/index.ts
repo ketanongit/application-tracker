@@ -3,5 +3,4 @@ export interface ApplicationStats {
   totalApplications: number;
   todayApplications: number;
   successRate: number;
-  pendingApplications: number;
 }

@@ -17,7 +17,6 @@ export const companyTypeEnum = pgEnum("company_type", [
 
 export const applicationStatusEnum = pgEnum("application_status", [
   "APPLIED",
-  "PENDING", 
   "REJECTED",
   "PROCEEDED"
 ]);
@@ -33,7 +32,6 @@ export const applications = pgTable("applications", {
   status: applicationStatusEnum("status").default("APPLIED").notNull(),
   appliedDate: timestamp("applied_date").defaultNow().notNull(),
   notes: text("notes"),
-  // For tracking progress if status is PROCEEDED
   currentRound: varchar("current_round", { length: 100 }), // "HR Round", "Technical Round 1", etc.
   finalVerdict: text("final_verdict"), // Final outcome details
   createdAt: timestamp("created_at").defaultNow().notNull(),

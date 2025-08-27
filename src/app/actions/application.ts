@@ -253,14 +253,12 @@ export async function getFreshApplicationStats() {
   const proceededCount = allApplications.filter((app: Application) => app.status === "PROCEEDED").length;
   const successRate = totalApplications ? Math.round((proceededCount / totalApplications) * 100) : 0;
   
-  const pendingCount = allApplications.filter((app: Application) => app.status === "PENDING").length;
   const rejectedCount = allApplications.filter((app: Application) => app.status === "REJECTED").length;
 
   return {
     totalApplications,
     todayApplications,
     successRate,
-    pendingCount,
     rejectedCount,
     proceededCount
   };
