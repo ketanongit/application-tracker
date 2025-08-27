@@ -14,8 +14,6 @@ export default function StatsCards({ applications }: StatsCardsProps) {
   
   const proceededApplications = applications.filter(a => a.status === "PROCEEDED").length;
   const successRate = totalApplications ? Math.round((proceededApplications / totalApplications) * 100) : 0;
-  
-  const pendingApplications = applications.filter(a => a.status === "PENDING").length;
   const rejectedApplications = applications.filter(a => a.status === "REJECTED").length;
 
   const stats = [
@@ -39,13 +37,6 @@ export default function StatsCards({ applications }: StatsCardsProps) {
       bgColor: "bg-purple-50", 
       textColor: "text-purple-700",
       iconColor: "text-purple-600"
-    },
-    {
-      title: "Pending Applications",
-      value: pendingApplications,
-      bgColor: "bg-yellow-50",
-      textColor: "text-yellow-700", 
-      iconColor: "text-yellow-600"
     },
     {
       title: "Rejected Applications",

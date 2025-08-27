@@ -94,14 +94,12 @@ export default function EditableTable({ applications }: EditableTableProps) {
                     className="w-full p-1 border rounded"
                   >
                     <option value="APPLIED">Applied</option>
-                    <option value="PENDING">Pending</option>
                     <option value="REJECTED">Rejected</option>
                     <option value="PROCEEDED">Proceeded</option>
                   </select>
                 ) : (
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     app.status === 'APPLIED' ? 'bg-blue-100 text-blue-800' :
-                    app.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                     app.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
                     'bg-green-100 text-green-800'
                   }`}>

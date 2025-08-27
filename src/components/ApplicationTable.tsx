@@ -29,7 +29,6 @@ export default function ApplicationsTable({ applications }: ApplicationsTablePro
   const getStatusColor = (status: string) => {
     switch (status) {
       case "APPLIED": return "bg-blue-100 text-blue-800";
-      case "PENDING": return "bg-yellow-100 text-yellow-800";
       case "REJECTED": return "bg-red-100 text-red-800";
       case "PROCEEDED": return "bg-green-100 text-green-800";
       default: return "bg-gray-100 text-gray-800";
@@ -130,7 +129,6 @@ function ApplicationRow({ application, onStatusUpdate, isLoading, getStatusColor
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="APPLIED">Applied</SelectItem>
-                      <SelectItem value="PENDING">Pending</SelectItem>
                       <SelectItem value="REJECTED">Rejected</SelectItem>
                       <SelectItem value="PROCEEDED">Proceeded</SelectItem>
                     </SelectContent>
