@@ -6,11 +6,8 @@ export const companyTypeEnum = pgEnum("company_type", [
   "MNC", 
   "YC_STARTUP", 
   "INDIAN_UNICORN", 
-  "WELLFOUND_STARTUP", 
+  "WELL_FUNDED_STARTUP",
   "EARLY_STAGE_STARTUP",
-  "SERIES_A",
-  "SERIES_B",
-  "SERIES_C",
   "PUBLIC_COMPANY",
   "OTHER"
 ]);
@@ -19,6 +16,12 @@ export const applicationStatusEnum = pgEnum("application_status", [
   "APPLIED",
   "REJECTED",
   "PROCEEDED"
+]);
+
+export const ReachoutMethodEnum = pgEnum("reachout_method", [
+  "LINKEDIN_INMAIL",
+  "EMAIL",
+  "OTHER"
 ]);
 
 // Main applications table
@@ -38,6 +41,13 @@ export const applications = pgTable("applications", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const reachout_methods = pgTable("reachout_methods", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull().references(() => applications.id, { onDelete: "cascade" }),
+  method: ReachoutMethodEnum("method").notNull(),
+  personContacted: varchar("person_contacted", { length: 255 }),
+  contactInfo: varchar("contact_info", { length: 255 }), 
+});
 // Daily application counter table
 export const dailyApplications = pgTable("daily_applications", {
   id: serial("id").primaryKey(),
@@ -58,3 +68,9 @@ export type Application = typeof applications.$inferSelect;
 export type NewApplication = typeof applications.$inferInsert;
 export type DailyApplication = typeof dailyApplications.$inferSelect;
 export type NewDailyApplication = typeof dailyApplications.$inferInsert;
+export type ReachoutMethod = typeof reachout_methods.$inferSelect;
+export type NewReachoutMethod = typeof reachout_methods.$inferInsert;
+export interface ApplicationWithReachout extends Application {
+  reachoutMethods?: ReachoutMethod[];
+}
+

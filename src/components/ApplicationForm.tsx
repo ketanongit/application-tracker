@@ -60,11 +60,8 @@ export default function ApplicationForm() {
                 <SelectItem value="MNC">MNC</SelectItem>
                 <SelectItem value="YC_STARTUP">YC Startup</SelectItem>
                 <SelectItem value="INDIAN_UNICORN">Indian Unicorn</SelectItem>
-                <SelectItem value="WELLFOUND_STARTUP">Wellfound Startup</SelectItem>
+                <SelectItem value="WELL_FUNDED_STARTUP">Well funded Startup</SelectItem>
                 <SelectItem value="EARLY_STAGE_STARTUP">Early Stage Startup</SelectItem>
-                <SelectItem value="SERIES_A">Series A</SelectItem>
-                <SelectItem value="SERIES_B">Series B</SelectItem>
-                <SelectItem value="SERIES_C">Series C</SelectItem>
                 <SelectItem value="PUBLIC_COMPANY">Public Company</SelectItem>
                 <SelectItem value="OTHER">Other</SelectItem>
               </SelectContent>

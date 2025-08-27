@@ -7,11 +7,13 @@ import {
   dailyApplications,
   NewApplication,
   companyTypeEnum,
-  applicationStatusEnum 
+  applicationStatusEnum,
+  ReachoutMethodEnum,
+  reachout_methods
 } from "@/db/schema";
-import { eq, desc, sql, and, gte, lte } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { ApplicationWithReachout } from "@/db/schema";
 
 export async function createApplication(formData: FormData) {
   const companyName = formData.get("companyName") as string;
@@ -69,6 +71,32 @@ export async function updateApplicationStatus(
     return { success: true };
   } catch (error) {
     return { success: false, error: "Failed to update application" };
+  }
+}
+
+// Updated function to get applications with reach-out methods
+export async function getApplicationsWithReachout(): Promise<ApplicationWithReachout[]> {
+  try {
+    const applications = await db
+      .select()
+      .from(applicationsTable)
+      .orderBy(desc(applicationsTable.appliedDate));
+
+    // Get reach-out methods for all applications
+    const allReachoutMethods = await db
+      .select()
+      .from(reachout_methods);
+
+    // Combine applications with their reach-out methods
+    const applicationsWithReachout = applications.map(app => ({
+      ...app,
+      reachoutMethods: allReachoutMethods.filter(method => method.applicationId === app.id)
+    }));
+
+    return applicationsWithReachout;
+  } catch (error) {
+    console.error("Error fetching applications with reach-out methods:", error);
+    return [];
   }
 }
 
@@ -179,12 +207,45 @@ export async function getApplicationsByCategory(category: string): Promise<Appli
   }
 }
 
-export async function updateApplication(id: number, data: Partial<Application>) {
+export async function updateApplication(
+  id: number, 
+  data: Partial<Application>,
+  reachoutMethods?: Array<{
+    id?: number;
+    applicationId: number;
+    method: typeof ReachoutMethodEnum.enumValues[number];
+    personContacted?: string;
+    contactInfo?: string;
+  }>
+) {
   try {
+    // Update application data
     await db
       .update(applicationsTable)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(applicationsTable.id, id));
+
+    // Handle reach-out methods if provided
+    if (reachoutMethods) {
+      // Delete existing reach-out methods for this application
+      await db.delete(reachout_methods).where(eq(reachout_methods.applicationId, id));
+      
+      // Insert new reach-out methods
+      const validMethods = reachoutMethods.filter(method => 
+        method.method && (method.personContacted || method.contactInfo)
+      );
+      
+      if (validMethods.length > 0) {
+        await db.insert(reachout_methods).values(
+          validMethods.map(method => ({
+            applicationId: id,
+            method: method.method,
+            personContacted: method.personContacted || null,
+            contactInfo: method.contactInfo || null,
+          }))
+        );
+      }
+    }
     
     // Revalidate all affected paths
     revalidatePath("/dashboard");
@@ -196,6 +257,7 @@ export async function updateApplication(id: number, data: Partial<Application>) 
     
     return { success: true };
   } catch (error) {
+    console.error("Error updating application:", error);
     return { success: false, error: "Failed to update application" };
   }
 }
