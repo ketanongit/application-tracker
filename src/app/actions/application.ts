@@ -15,37 +15,6 @@ import { eq, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { ApplicationWithReachout } from "@/db/schema";
 
-export async function createApplication(formData: FormData) {
-  const companyName = formData.get("companyName") as string;
-  const position = formData.get("position") as string;
-  const companyType = formData.get("companyType") as typeof companyTypeEnum.enumValues[number];
-  const jobDescription = formData.get("jobDescription") as string;
-  const applicationUrl = formData.get("applicationUrl") as string;
-  const notes = formData.get("notes") as string;
-
-  try {
-    await db.insert(applicationsTable).values({
-      companyName,
-      position,
-      companyType,
-      jobDescription: jobDescription || null,
-      applicationUrl: applicationUrl || null,
-      notes: notes || null,
-      status: "APPLIED",
-    });
-
-    // Revalidate all affected paths
-    revalidatePath("/dashboard");
-    revalidatePath("/category-wise/all");
-    revalidatePath(`/category-wise/${companyType}`);
-    revalidatePath("/", "layout"); // Force revalidate entire app
-    
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Failed to create application" };
-  }
-}
-
 export async function updateApplicationStatus(
   applicationId: number,
   status: string,
@@ -97,41 +66,6 @@ export async function getApplicationsWithReachout(): Promise<ApplicationWithReac
   } catch (error) {
     console.error("Error fetching applications with reach-out methods:", error);
     return [];
-  }
-}
-
-export async function createDailyTarget(date: string, count: number) {
-  try {
-    const targetDate = new Date(date);
-    
-    // Create the daily target
-    await db.insert(dailyApplications).values({
-      date: targetDate,
-      plannedCount: count,
-      actualCount: 0,
-    });
-
-    // Create placeholder applications for the day
-    const placeholders: NewApplication[] = Array.from({ length: count }, (_, i) => ({
-      companyName: `Placeholder ${i + 1}`,
-      position: "To be filled",
-      companyType: "OTHER",
-      appliedDate: targetDate,
-      status: "APPLIED",
-      notes: "Created from daily target - please fill details",
-    }));
-
-    await db.insert(applicationsTable).values(placeholders);
-
-    // Revalidate all affected paths
-    revalidatePath("/dashboard");
-    revalidatePath("/category-wise/all");
-    revalidatePath("/category-wise/OTHER");
-    revalidatePath("/", "layout");
-    
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Failed to create daily target" };
   }
 }
 
@@ -300,28 +234,3 @@ export async function refreshDashboard() {
   }
 }
 
-// Function to get fresh stats without cache
-export async function getFreshApplicationStats() {
-  const allApplications: Application[] = await db
-    .select()
-    .from(applicationsTable)
-    .orderBy(desc(applicationsTable.appliedDate));
-
-  const totalApplications = allApplications.length;
-  const todayApplications = allApplications.filter(
-    (app: Application) => new Date(app.appliedDate).toDateString() === new Date().toDateString()
-  ).length;
-
-  const proceededCount = allApplications.filter((app: Application) => app.status === "PROCEEDED").length;
-  const successRate = totalApplications ? Math.round((proceededCount / totalApplications) * 100) : 0;
-  
-  const rejectedCount = allApplications.filter((app: Application) => app.status === "REJECTED").length;
-
-  return {
-    totalApplications,
-    todayApplications,
-    successRate,
-    rejectedCount,
-    proceededCount
-  };
-}

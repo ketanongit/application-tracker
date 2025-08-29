@@ -6,23 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createDailyTarget, createQuickApplication } from "@/app/actions/application";
+import { createQuickApplication } from "@/app/actions/application";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 
 export default function QuickAdditionPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [targetCount, setTargetCount] = useState(1);
-
-  async function handleDailyTarget(formData: FormData) {
-    setIsLoading(true);
-    const date = formData.get("date") as string;
-    const count = parseInt(formData.get("count") as string);
-    
-    await createDailyTarget(date, count);
-    setIsLoading(false);
-  }
-
   async function handleQuickAdd(formData: FormData) {
     setIsLoading(true);
     await createQuickApplication(formData);

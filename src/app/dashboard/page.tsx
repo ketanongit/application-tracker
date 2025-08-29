@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { getApplicationsWithStats, getFreshApplicationStats } from "@/app/actions/application";
+import { getApplicationsWithStats } from "@/app/actions/application";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatsCards from "@/components/StatsCard";
 import CategoryDistribution from "@/components/CategoryDistribution";
@@ -19,12 +19,6 @@ export default async function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 mb-8">
         <h1 className="text-3xl font-bold">Job Application Dashboard</h1>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Link 
-            href="/application" 
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-center whitespace-nowrap"
-          >
-            Add Application
-          </Link>
           <Link 
             href="/quick-addition" 
             className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-center whitespace-nowrap"
